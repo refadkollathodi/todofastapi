@@ -18,6 +18,15 @@ Todo:list[Todolist]=[
 ]
 
 
+@app.get("/list/{user}")
+def get(user:str) -> list[Todolist]:
+   result = [i for i in Todo if i.user == user]
+   if not result:
+    raise HTTPException(status_code=404, detail="item not found")
+   return result
+    
+
+
 @app.get("/list")
 def get_items() -> list[Todolist]:
     return Todo
@@ -27,6 +36,7 @@ def add_item(item: Todolist) -> Todolist:
     return item
 @app.put("/list")
 def update_item(item:Todolist) -> Todolist:
+    
     for i in Todo:
         if  i.id== item.id:
             i.user=item.user
