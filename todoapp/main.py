@@ -1,26 +1,34 @@
 from typing import Union
 from fastapi import FastAPI
-
 from fastapi import HTTPException
-
 from pydantic import BaseModel
+
+import models
+from database import engine,SessionLocal
+from sqlalchemy.orm import Session
+from fastapi import Depends,status
 
 
 app = FastAPI()
+models.Base.metadata.create_all(bind=engine)
+
 
 class Todolist(BaseModel):
-    id: int
     task: str
     user:str
 
-Todo:list[Todolist]=[
-    Todolist(id=1 , user="refad" , task="test"),
-]
+def get_db():
+    db=SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 
 @app.get("/list/{user}")
-def get(user:str) -> list[Todolist]:
-   result = [i for i in Todo if i.user == user]
+def get_items_user(user:str,db:Session=Depends(get_db)):
+   result = db.query(models.TodoItem).filter(models.TodoItem.user==user).all()
    if not result:
     raise HTTPException(status_code=404, detail="item not found")
    return result
@@ -28,25 +36,36 @@ def get(user:str) -> list[Todolist]:
 
 
 @app.get("/list")
-def get_items() -> list[Todolist]:
-    return Todo
-@app.post("/list")
-def add_item(item: Todolist) -> Todolist:
-    Todo.append(item)
+def get_items(db:Session=Depends(get_db)):
+    item=db.query(models.TodoItem).all()
     return item
-@app.put("/list")
-def update_item(item:Todolist) -> Todolist:
-    
-    for i in Todo:
-        if  i.id== item.id:
-            i.user=item.user
-            i.task=item.task
-            return i
-    raise HTTPException(status_code=404, detail="item not found")
+
+@app.post("/list",status_code=status.HTTP_201_CREATED)
+def add_item(item:Todolist,db:Session=Depends(get_db)):
+    new_item=models.TodoItem(
+        user=item.user,
+        task=item.task
+    )
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+    return new_item
+
+@app.put("/list",status_code=status.HTTP_201_CREATED)
+def update_item(item:Todolist,db:Session=Depends(get_db)):
+    todo_item=db.query(models.TodoItem).filter(models.TodoItem.id==item.id).first()
+    if not todo_item:
+     raise HTTPException(status_code=404, detail="item not found")
+    todo_item.user=item.user
+    todo_item.task=item.task
+    db.commit()
+    db.refresh(todo_item)
+    return todo_item
 @app.delete("/list/{id}")
-def delete_item(id:int) -> None:
-    for i in Todo:
-        if i.id==id:
-            Todo.remove(i)
-            return 
+def delete_item(id:int,db:Session=Depends(get_db)):
+   result = db.query(models.TodoItem).filter(models.TodoItem.id==id).first()
+   if not result:
     raise HTTPException(status_code=404, detail="item not found")
+   db.delete(result)
+   db.commit()
+   return result
