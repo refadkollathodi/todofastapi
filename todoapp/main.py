@@ -146,7 +146,7 @@ def register_user(user:UserRegister,db:Session=Depends(get_db)):
 
 
 @app.get("/list/{user}")
-def get_items_user(user:str,db:Session=Depends(get_db)):
+def get_items_user(user:str,db:Session=Depends(get_db),current_user:User=Depends(get_current_active_user)):
    result = db.query(models.TodoItem).filter(models.TodoItem.user==user).all()
    if not result:
     raise HTTPException(status_code=404, detail="item not found")
@@ -155,9 +155,8 @@ def get_items_user(user:str,db:Session=Depends(get_db)):
 
 
 @app.get("/list")
-def get_items(db:Session=Depends(get_db)):
-    item=db.query(models.TodoItem).all()
-    return item
+def get_items(db:Session=Depends(get_db),current_user:User=Depends(get_current_active_user)):
+   return db.query(models.TodoItem).all()
 
 @app.post("/list",status_code=status.HTTP_201_CREATED)
 def add_item(item:Todolist,db:Session=Depends(get_db)):
