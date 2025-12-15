@@ -1,35 +1,25 @@
-version: '3.9'
-
 services:
-  db:
+  mysql:
     image: mysql:8
     container_name: mysql-db
-    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: "123"
-      MYSQL_DATABASE: "todofastapi"
-    command: --default-authentication-plugin=mysql_native_password
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: todo_db
+      MYSQL_USER: todo_user
+      MYSQL_PASSWORD: todo_pass
     ports:
-      - "3307:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      - "3306:3306"
 
   web:
     build: .
-    container_name: fastapi-web
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
-    environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: "123"
-      DB_NAME: todofastapi
+    container_name: todoapp_web
     depends_on:
-      db:
-        condition: service_healthy
+      - mysql
+    environment:
+      DB_USER: todo_user
+      DB_PASSWORD: todo_pass
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: todo_db
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
