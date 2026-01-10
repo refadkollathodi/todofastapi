@@ -9,6 +9,8 @@ services:
       MYSQL_PASSWORD: todo_pass
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
       - todo-net
 
@@ -26,7 +28,7 @@ services:
       DB_NAME: todo_db
       PYTHONUNBUFFERED: "1"
     ports:
-      - "8000:8000"
+      - "80:8000"
     networks:
       - todo-net
       
