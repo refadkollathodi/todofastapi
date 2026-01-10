@@ -50,3 +50,5 @@ services:
 networks:
   todo-net:
     driver: bridge
+volumes:
+  mysql_data:
