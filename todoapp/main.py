@@ -8,6 +8,7 @@ from jose import JWTError,jwt
 from passlib.context import CryptContext
 
 import models
+import logging
 from database import engine,SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Depends,status
@@ -15,6 +16,8 @@ from fastapi import Depends,status
 SECRET_KEY="09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3ef"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+#testing
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
@@ -99,6 +102,12 @@ async def get_current_active_user(current_user:User=Depends(get_current_user)):
    if current_user.disabled:
       raise HTTPException(status_code=400,detail="Inactive user")
    return current_user
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(asctime)s | %(name)s | %(message)s"
+)
+logger = logging.getLogger("todo-app")
 
 
 @app.post("/token", response_model=Token)

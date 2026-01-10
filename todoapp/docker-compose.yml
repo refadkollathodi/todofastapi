@@ -9,10 +9,13 @@ services:
       MYSQL_PASSWORD: todo_pass
     ports:
       - "3306:3306"
+    networks:
+      - todo-net
 
   web:
     build: .
     container_name: todoapp_web
+    restart: on-failure
     depends_on:
       - mysql
     environment:
@@ -21,5 +24,27 @@ services:
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: todo_db
+      PYTHONUNBUFFERED: "1"
     ports:
       - "8000:8000"
+    networks:
+      - todo-net
+      
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy-local
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro 
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+    depends_on:
+      - web
+    networks:
+      - todo-net
+
+# Define the network here
+networks:
+  todo-net:
+    driver: bridge

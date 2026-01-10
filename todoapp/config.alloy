@@ -1,0 +1,36 @@
+// Discovery: Find all Docker containers running on this laptop
+discovery.docker "local_containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Filter: Only keep logs from your specific FastAPI container
+discovery.relabel "filter_todo_app" {
+  targets = discovery.docker.local_containers.targets
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = ".*(todo|web).*"
+    action        = "keep"
+  }
+}
+
+// Source: Read the logs from the filtered container
+loki.source.docker "docker_logs" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.filter_todo_app.output
+  forward_to = [loki.process.add_labels.receiver]
+}
+loki.process "add_labels" {
+  stage.static_labels {
+    values = {
+      "service_name" = "todo-app",
+    }
+  }
+  // After adding the label, send logs to the server
+  forward_to = [loki.write.remote_loki.receiver]
+}
+// Destination: Send the logs to your AWS EC2 via the NGINX Gateway
+loki.write "remote_loki" {
+  endpoint {
+    url = "https://monitor.maxemo.app/loki/api/v1/push"
+  }
+}
