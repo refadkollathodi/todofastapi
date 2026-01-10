@@ -17,11 +17,9 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/todoapp
-            git pull origin main
-            cd todoapp
-            sudo docker build -t todo-app .
-            sudo docker stop todo-container || true
-            sudo docker rm todo-container || true
-            sudo docker run -d --name todo-container -p 80:8000 todo-app
+        script: |
+          cd ~/todoapp
+          git pull origin main
+          cd todoapp  # Move into the folder where docker-compose.yml is
+          sudo docker-compose down --volumes --remove-orphans
+          sudo docker-compose up -d --build
