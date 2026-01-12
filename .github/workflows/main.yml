@@ -22,4 +22,5 @@ jobs:
             git pull origin main
             cd todoapp
             sudo docker-compose down --volumes --remove-orphans
+            sudo docker system prune -a -f
             sudo docker-compose up -d --build
